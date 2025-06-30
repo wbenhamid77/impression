@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jhipster-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jhipster-app
+  template:
+    metadata:
+      labels:
+        app: jhipster-app
+    spec:
+      containers:
+        - name: jhipster-app
+          image: walidbenhamid1/jhipster-sample-application:latest
+          ports:
+            - containerPort: 8084
+      template:
+        spec:
+           imagePullSecrets:
+             - name: regcred
