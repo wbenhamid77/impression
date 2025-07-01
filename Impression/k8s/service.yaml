@@ -4,6 +4,9 @@ metadata:
   name: impression-service
   labels:
     app: impression-app
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-external-ip: "10.108.90.125"
+    service.beta.kubernetes.io/aws-load-balancer-internal-ip: "10.108.90.125"
 spec:
   selector:
     app: impression-app
@@ -12,4 +15,4 @@ spec:
       port: 80
       targetPort: 8083
       nodePort: 30080
-  type: NodePort
+  type: LoadBalancer
