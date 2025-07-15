@@ -2,9 +2,14 @@ services:
   mysql:
     image: 'mysql:latest'
     environment:
-      - 'MYSQL_DATABASE=impressiondemo'
-      - 'MYSQL_PASSWORD= '
-      - 'MYSQL_ROOT_PASSWORD= '
+      - 'MYSQL_DATABASE=Location'
+      - 'MYSQL_PASSWORD='
+      - 'MYSQL_ROOT_PASSWORD='
       - 'MYSQL_USER=root'
     ports:
-      - '3306'
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

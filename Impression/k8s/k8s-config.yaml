@@ -31,11 +31,11 @@ spec:
             - containerPort: 8083
           env:
             - name: SPRING_DATASOURCE_URL
-              value: "jdbc:mysql://yamanote.proxy.rlwy.net:45062/railway"
+              value: "jdbc:mysql://localhost:3306/Location"
             - name: SPRING_DATASOURCE_USERNAME
               value: "root"
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "LPxFTGmgbOrVyxhXjYDckJzAKFQPqDnJ"
+              value: ""
             - name: SERVER_PORT
               value: "8083"
           resources:
