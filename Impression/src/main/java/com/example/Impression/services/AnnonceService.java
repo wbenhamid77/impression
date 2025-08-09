@@ -4,9 +4,13 @@ import com.example.Impression.dto.AnnonceDTO;
 import com.example.Impression.dto.CreerAnnonceDTO;
 import com.example.Impression.dto.AdresseDTO;
 import com.example.Impression.dto.LocateurInfoDTO;
+import com.example.Impression.dto.StadeDTO;
+import com.example.Impression.dto.AnnonceStadeDistanceDTO;
 import com.example.Impression.entities.Annonce;
 import com.example.Impression.entities.Adresse;
 import com.example.Impression.entities.Locateur;
+import com.example.Impression.entities.Stade;
+import com.example.Impression.entities.AnnonceStadeDistance;
 import com.example.Impression.enums.TypeMaison;
 import com.example.Impression.exception.AnnonceException;
 import com.example.Impression.repositories.AdresseRepository;
@@ -21,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service
 public class AnnonceService {
@@ -36,6 +41,9 @@ public class AnnonceService {
 
     @Autowired
     private ImageService imageService;
+
+    @Autowired
+    private AnnonceStadeDistanceService annonceStadeDistanceService;
 
     // Créer une annonce
     public AnnonceDTO creerAnnonce(CreerAnnonceDTO creerAnnonceDTO) {
@@ -72,15 +80,18 @@ public class AnnonceService {
             annonce.setImagesBlob(imagesBytes);
         }
 
-        annonce.setStadePlusProche(creerAnnonceDTO.getStadePlusProche());
-        annonce.setDistanceStade(creerAnnonceDTO.getDistanceStade());
-        annonce.setAdresseStade(creerAnnonceDTO.getAdresseStade());
+        // Définir les coordonnées géographiques
         annonce.setLatitude(creerAnnonceDTO.getLatitude());
         annonce.setLongitude(creerAnnonceDTO.getLongitude());
         annonce.setLocateur(locateur);
         annonce.setEstActive(true);
 
+        // Sauvegarder l'annonce d'abord
         Annonce annonceSauvegardee = annonceRepository.save(annonce);
+
+        // Calculer et sauvegarder les distances avec tous les stades
+        annonceStadeDistanceService.calculerEtSauvegarderDistances(annonceSauvegardee);
+
         return convertirEnDTO(annonceSauvegardee);
     }
 
@@ -152,9 +163,19 @@ public class AnnonceService {
             annonce.setImagesBlob(imagesBytes);
         }
 
-        annonce.setStadePlusProche(creerAnnonceDTO.getStadePlusProche());
-        annonce.setDistanceStade(creerAnnonceDTO.getDistanceStade());
-        annonce.setAdresseStade(creerAnnonceDTO.getAdresseStade());
+        // Mettre à jour les coordonnées et recalculer les distances si elles ont changé
+        if (creerAnnonceDTO.getLatitude() != null && creerAnnonceDTO.getLongitude() != null) {
+            boolean coordonneesOntChange = !creerAnnonceDTO.getLatitude().equals(annonce.getLatitude()) ||
+                    !creerAnnonceDTO.getLongitude().equals(annonce.getLongitude());
+
+            annonce.setLatitude(creerAnnonceDTO.getLatitude());
+            annonce.setLongitude(creerAnnonceDTO.getLongitude());
+
+            if (coordonneesOntChange) {
+                // Recalculer les distances avec tous les stades
+                annonceStadeDistanceService.mettreAJourDistances(annonce);
+            }
+        }
         annonce.mettreAJour();
 
         Annonce annonceSauvegardee = annonceRepository.save(annonce);
@@ -210,9 +231,19 @@ public class AnnonceService {
             annonce.setImagesBlob(imagesBytes);
         }
 
-        annonce.setStadePlusProche(creerAnnonceDTO.getStadePlusProche());
-        annonce.setDistanceStade(creerAnnonceDTO.getDistanceStade());
-        annonce.setAdresseStade(creerAnnonceDTO.getAdresseStade());
+        // Mettre à jour les coordonnées et recalculer les distances si elles ont changé
+        if (creerAnnonceDTO.getLatitude() != null && creerAnnonceDTO.getLongitude() != null) {
+            boolean coordonneesOntChange = !creerAnnonceDTO.getLatitude().equals(annonce.getLatitude()) ||
+                    !creerAnnonceDTO.getLongitude().equals(annonce.getLongitude());
+
+            annonce.setLatitude(creerAnnonceDTO.getLatitude());
+            annonce.setLongitude(creerAnnonceDTO.getLongitude());
+
+            if (coordonneesOntChange) {
+                // Recalculer les distances avec tous les stades
+                annonceStadeDistanceService.mettreAJourDistances(annonce);
+            }
+        }
         annonce.mettreAJour();
 
         Annonce annonceSauvegardee = annonceRepository.save(annonce);
@@ -339,6 +370,7 @@ public class AnnonceService {
     }
 
     // Méthodes de conversion
+    // Méthode utilitaire pour convertir en DTO
     private AnnonceDTO convertirEnDTO(Annonce annonce) {
         AnnonceDTO dto = new AnnonceDTO();
         dto.setId(annonce.getId());
@@ -361,6 +393,7 @@ public class AnnonceService {
         dto.setImagesBlob(annonce.getImagesBlob());
         dto.setNoteMoyenne(annonce.getNoteMoyenne());
         dto.setNombreAvis(annonce.getNombreAvis());
+
         // Créer les informations du locateur
         LocateurInfoDTO locateurInfo = new LocateurInfoDTO();
         locateurInfo.setId(annonce.getLocateur().getId());
@@ -376,11 +409,36 @@ public class AnnonceService {
         locateurInfo.setRaisonSociale(annonce.getLocateur().getRaisonSociale());
 
         dto.setLocateur(locateurInfo);
-        dto.setStadePlusProche(annonce.getStadePlusProche());
-        dto.setDistanceStade(annonce.getDistanceStade());
-        dto.setAdresseStade(annonce.getAdresseStade());
         dto.setLatitude(annonce.getLatitude());
         dto.setLongitude(annonce.getLongitude());
+
+        // Convertir les distances avec les stades
+        List<AnnonceStadeDistance> distances = annonceStadeDistanceService.getDistancesParAnnonce(annonce);
+        List<AnnonceStadeDistanceDTO> distancesDTO = distances.stream()
+                .map(this::convertirAnnonceStadeDistanceEnDTO)
+                .collect(Collectors.toList());
+
+        dto.setDistancesStades(distancesDTO);
+
+        // Trouver le stade le plus proche
+        Optional<AnnonceStadeDistance> stadeLePlusProche = annonceStadeDistanceService.getStadeLePlusProche(annonce);
+        if (stadeLePlusProche.isPresent()) {
+            dto.setStadeLePlusProche(convertirAnnonceStadeDistanceEnDTO(stadeLePlusProche.get()));
+        }
+
+        return dto;
+    }
+
+    private AnnonceStadeDistanceDTO convertirAnnonceStadeDistanceEnDTO(AnnonceStadeDistance distance) {
+        AnnonceStadeDistanceDTO dto = new AnnonceStadeDistanceDTO();
+        dto.setId(distance.getId());
+        dto.setStade(convertirStadeEnDTO(distance.getStade()));
+        dto.setDistance(distance.getDistance());
+        dto.setTempsTrajetMinutes(distance.getTempsTrajetMinutes());
+        dto.setModeTransport(distance.getModeTransport().name());
+        dto.setEstLePlusProche(distance.getEstLePlusProche());
+        dto.setDateCreation(distance.getDateCreation());
+        dto.setDateModification(distance.getDateModification());
         return dto;
     }
 
@@ -392,7 +450,6 @@ public class AnnonceService {
         adresse.setVille(adresseDTO.getVille());
         adresse.setPays(adresseDTO.getPays());
         adresse.setComplement(adresseDTO.getComplement());
-        // latitude/longitude supprimés
         return adresse;
     }
 
@@ -404,7 +461,27 @@ public class AnnonceService {
         dto.setVille(adresse.getVille());
         dto.setPays(adresse.getPays());
         dto.setComplement(adresse.getComplement());
-        // latitude/longitude supprimés
+        return dto;
+    }
+
+    private StadeDTO convertirStadeEnDTO(Stade stade) {
+        if (stade == null) {
+            return null;
+        }
+
+        StadeDTO dto = new StadeDTO();
+        dto.setId(stade.getId());
+        dto.setNom(stade.getNom());
+        dto.setVille(stade.getVille());
+        dto.setAdresseComplete(stade.getAdresseComplete());
+        dto.setLatitude(stade.getLatitude());
+        dto.setLongitude(stade.getLongitude());
+        dto.setCapacite(stade.getCapacite());
+        dto.setDescription(stade.getDescription());
+        dto.setEstActif(stade.isEstActif());
+        dto.setDateCreation(stade.getDateCreation());
+        dto.setDateModification(stade.getDateModification());
+
         return dto;
     }
 }

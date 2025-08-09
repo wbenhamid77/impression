@@ -6,10 +6,13 @@ import com.example.Impression.dto.UtilisateurDTO;
 import com.example.Impression.dto.AnnonceDTO;
 import com.example.Impression.dto.AdresseDTO;
 import com.example.Impression.dto.LocateurInfoDTO;
+import com.example.Impression.dto.StadeDTO;
+import com.example.Impression.dto.AnnonceStadeDistanceDTO;
 import com.example.Impression.entities.Locataire;
 import com.example.Impression.entities.Utilisateur;
 import com.example.Impression.entities.Annonce;
 import com.example.Impression.entities.Adresse;
+import com.example.Impression.entities.AnnonceStadeDistance;
 import com.example.Impression.repositories.LocataireRepository;
 import com.example.Impression.repositories.UtilisateurRepository;
 import com.example.Impression.repositories.AnnonceRepository;
@@ -40,6 +43,9 @@ public class LocataireService {
 
     @Autowired
     private AnnonceRepository annonceRepository;
+
+    @Autowired
+    private AnnonceStadeDistanceService annonceStadeDistanceService;
 
     // Créer un locataire
     public UtilisateurDTO creerLocataire(CreationLocataireDTO dto) {
@@ -280,11 +286,36 @@ public class LocataireService {
         locateurInfo.setRaisonSociale(annonce.getLocateur().getRaisonSociale());
 
         dto.setLocateur(locateurInfo);
-        dto.setStadePlusProche(annonce.getStadePlusProche());
-        dto.setDistanceStade(annonce.getDistanceStade());
-        dto.setAdresseStade(annonce.getAdresseStade());
         dto.setLatitude(annonce.getLatitude());
         dto.setLongitude(annonce.getLongitude());
+
+        // Convertir les distances avec les stades
+        List<AnnonceStadeDistance> distances = annonceStadeDistanceService.getDistancesParAnnonce(annonce);
+        List<AnnonceStadeDistanceDTO> distancesDTO = distances.stream()
+                .map(this::convertirAnnonceStadeDistanceEnDTO)
+                .collect(Collectors.toList());
+
+        dto.setDistancesStades(distancesDTO);
+
+        // Trouver le stade le plus proche
+        Optional<AnnonceStadeDistance> stadeLePlusProche = annonceStadeDistanceService.getStadeLePlusProche(annonce);
+        if (stadeLePlusProche.isPresent()) {
+            dto.setStadeLePlusProche(convertirAnnonceStadeDistanceEnDTO(stadeLePlusProche.get()));
+        }
+
+        return dto;
+    }
+
+    private AnnonceStadeDistanceDTO convertirAnnonceStadeDistanceEnDTO(AnnonceStadeDistance distance) {
+        AnnonceStadeDistanceDTO dto = new AnnonceStadeDistanceDTO();
+        dto.setId(distance.getId());
+        dto.setStade(convertirStadeEnDTO(distance.getStade()));
+        dto.setDistance(distance.getDistance());
+        dto.setTempsTrajetMinutes(distance.getTempsTrajetMinutes());
+        dto.setModeTransport(distance.getModeTransport().name());
+        dto.setEstLePlusProche(distance.getEstLePlusProche());
+        dto.setDateCreation(distance.getDateCreation());
+        dto.setDateModification(distance.getDateModification());
         return dto;
     }
 
@@ -297,6 +328,28 @@ public class LocataireService {
         dto.setVille(adresse.getVille());
         dto.setPays(adresse.getPays());
         dto.setComplement(adresse.getComplement());
+        return dto;
+    }
+
+    // Méthode utilitaire pour convertir un stade en DTO
+    private StadeDTO convertirStadeEnDTO(com.example.Impression.entities.Stade stade) {
+        if (stade == null) {
+            return null;
+        }
+
+        StadeDTO dto = new StadeDTO();
+        dto.setId(stade.getId());
+        dto.setNom(stade.getNom());
+        dto.setVille(stade.getVille());
+        dto.setAdresseComplete(stade.getAdresseComplete());
+        dto.setLatitude(stade.getLatitude());
+        dto.setLongitude(stade.getLongitude());
+        dto.setCapacite(stade.getCapacite());
+        dto.setDescription(stade.getDescription());
+        dto.setEstActif(stade.isEstActif());
+        dto.setDateCreation(stade.getDateCreation());
+        dto.setDateModification(stade.getDateModification());
+
         return dto;
     }
 }

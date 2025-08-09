@@ -35,9 +35,10 @@ public class AnnonceDTO {
     private Double noteMoyenne;
     private int nombreAvis;
     private LocateurInfoDTO locateur;
-    private String stadePlusProche;
-    private BigDecimal distanceStade;
-    private String adresseStade;
     private BigDecimal latitude;
     private BigDecimal longitude;
+
+    // Nouvelles propriétés pour les distances avec stades
+    private List<AnnonceStadeDistanceDTO> distancesStades;
+    private AnnonceStadeDistanceDTO stadeLePlusProche;
 }

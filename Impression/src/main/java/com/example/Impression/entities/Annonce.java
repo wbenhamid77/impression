@@ -98,22 +98,20 @@ public class Annonce {
     @JoinColumn(name = "locateur_id", nullable = false)
     private Locateur locateur;
 
-    // Informations sur le stade le plus proche
-    @Column(length = 255)
-    private String stadePlusProche;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal distanceStade; // en kilomètres
-
-    @Column(length = 255)
-    private String adresseStade;
-
     // Coordonnées géographiques
     @Column(precision = 10, scale = 8)
     private BigDecimal latitude;
 
     @Column(precision = 11, scale = 8)
     private BigDecimal longitude;
+
+    // Relation avec les distances vers les stades
+    @OneToMany(mappedBy = "annonce", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<AnnonceStadeDistance> distancesStades = new ArrayList<>();
+
+    // Relation avec les réservations
+    @OneToMany(mappedBy = "annonce", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<com.example.Impression.entities.Reservation> reservations = new ArrayList<>();
 
     // Méthodes métier
     public void publier() {
@@ -148,10 +146,17 @@ public class Annonce {
         }
     }
 
-    public boolean verifierDisponibilite(LocalDateTime debut, LocalDateTime fin) {
-        // TODO: Implémenter la logique de vérification de disponibilité
-        // Vérifier s'il n'y a pas de réservations pour cette période
-        return true;
+    public boolean verifierDisponibilite(java.time.LocalDate dateArrivee, java.time.LocalDate dateDepart) {
+        // Vérifier s'il n'y a pas de réservations actives pour cette période
+        return reservations.stream()
+                .filter(reservation -> reservation.estActive())
+                .noneMatch(reservation -> reservation.estEnConflit(dateArrivee, dateDepart));
+    }
+
+    public List<com.example.Impression.entities.Reservation> getReservationsActives() {
+        return reservations.stream()
+                .filter(reservation -> reservation.estActive())
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @PrePersist
@@ -168,6 +173,15 @@ public class Annonce {
         if (images == null) {
             images = new ArrayList<>();
         }
+        if (distancesStades == null) {
+            distancesStades = new ArrayList<>();
+        }
+        if (reservations == null) {
+            reservations = new ArrayList<>();
+        }
+        if (reservations == null) {
+            reservations = new ArrayList<>();
+        }
     }
 
     @PreUpdate
@@ -182,6 +196,9 @@ public class Annonce {
         }
         if (images == null) {
             images = new ArrayList<>();
+        }
+        if (distancesStades == null) {
+            distancesStades = new ArrayList<>();
         }
     }
 }

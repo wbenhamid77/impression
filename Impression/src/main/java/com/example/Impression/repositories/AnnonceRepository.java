@@ -40,13 +40,6 @@ public interface AnnonceRepository extends JpaRepository<Annonce, UUID> {
         // Recherche par nombre de chambres
         List<Annonce> findByNombreChambresAndEstActiveTrue(int nombreChambres);
 
-        // Recherche par note minimum
-        List<Annonce> findByNoteMoyenneGreaterThanEqualAndEstActiveTrue(Double noteMin);
-
-        // Recherche par distance du stade
-        @Query("SELECT a FROM Annonce a WHERE a.estActive = true AND a.distanceStade <= :distanceMax")
-        List<Annonce> findByDistanceStadeLessThanEqual(@Param("distanceMax") BigDecimal distanceMax);
-
         // Recherche combinée
         @Query("SELECT a FROM Annonce a WHERE a.estActive = true " +
                         "AND (:ville IS NULL OR a.adresse.ville LIKE %:ville%) " +
@@ -61,8 +54,10 @@ public interface AnnonceRepository extends JpaRepository<Annonce, UUID> {
                         @Param("capaciteMin") Integer capaciteMin,
                         @Param("noteMin") Double noteMin);
 
-        // Trouver les annonces par stade
-        @Query("SELECT a FROM Annonce a WHERE a.estActive = true AND a.stadePlusProche LIKE %:stade%")
+        // Recherche par stade - maintenant via la table de liaison
+        @Query("SELECT DISTINCT a FROM Annonce a " +
+                        "JOIN a.distancesStades asd " +
+                        "WHERE a.estActive = true AND asd.stade.nom LIKE %:stade%")
         List<Annonce> findByStadeContaining(@Param("stade") String stade);
 
         // Compter les annonces d'un locateur
@@ -71,9 +66,7 @@ public interface AnnonceRepository extends JpaRepository<Annonce, UUID> {
         // Compter les annonces actives d'un locateur
         long countByLocateurAndEstActiveTrue(Locateur locateur);
 
-        // ========== RECHERCHES GÉOGRAPHIQUES ==========
-
-        // Recherche par rayon autour d'un point (en kilomètres)
+        // Recherche par rayon géographique
         @Query("SELECT a FROM Annonce a WHERE a.estActive = true " +
                         "AND a.latitude IS NOT NULL AND a.longitude IS NOT NULL " +
                         "AND (6371 * acos(cos(radians(:latitude)) * cos(radians(a.latitude)) * " +
@@ -86,7 +79,6 @@ public interface AnnonceRepository extends JpaRepository<Annonce, UUID> {
 
         // Recherche par zone géographique (rectangle)
         @Query("SELECT a FROM Annonce a WHERE a.estActive = true " +
-                        "AND a.latitude IS NOT NULL AND a.longitude IS NOT NULL " +
                         "AND a.latitude BETWEEN :latMin AND :latMax " +
                         "AND a.longitude BETWEEN :lonMin AND :lonMax")
         List<Annonce> findByZoneGeographique(

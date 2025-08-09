@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.ArrayList;
+import com.example.Impression.entities.Reservation;
 
 @Entity
 @Table(name = "locataires")
@@ -44,6 +46,10 @@ public class Locataire extends Utilisateur {
     @CollectionTable(name = "locataire_favoris", joinColumns = @JoinColumn(name = "locataire_id"))
     @Column(name = "favori_id")
     private List<UUID> favoris;
+
+    // Relation avec les réservations
+    @OneToMany(mappedBy = "locataire", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Reservation> reservations = new ArrayList<>();
 
     // Constructeur pour créer un locataire avec les informations de base
     public Locataire(String nom, String prenom, String email, String motDePasseHash) {
