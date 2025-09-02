@@ -92,6 +92,10 @@ public class StadeService {
      */
     public List<StadeAvecDistance> calculerDistancesAvecTousLesStades(BigDecimal latitude, BigDecimal longitude) {
         List<Stade> stades = stadeRepository.findByEstActifTrue();
+        if (stades == null || stades.isEmpty()) {
+            // Fallback: utiliser tous les stades si aucun n'est marqué actif
+            stades = stadeRepository.findAll();
+        }
         List<StadeAvecDistance> stadesAvecDistances = new ArrayList<>();
 
         for (Stade stade : stades) {

@@ -280,6 +280,89 @@ public class ReservationService {
         return reservations.stream().map(this::convertirEnDTO).toList();
     }
 
+    /**
+     * 1️⃣7️⃣ Périodes futures réservées (confirmées/en cours) pour une annonce
+     */
+    public java.util.List<com.example.Impression.dto.PeriodeReserveeDTO> getPeriodesFuturesReserveesAnnonce(
+            java.util.UUID annonceId) {
+        return getPeriodesFuturesReserveesAnnonce(annonceId, null);
+    }
+
+    /**
+     * Périodes futures réservées avec filtre de statuts optionnel
+     */
+    public java.util.List<com.example.Impression.dto.PeriodeReserveeDTO> getPeriodesFuturesReserveesAnnonce(
+            java.util.UUID annonceId, java.util.List<com.example.Impression.enums.StatutReservation> statuts) {
+        log.info("Récupération des périodes futures réservées pour l'annonce: {} avec statuts: {}", annonceId, statuts);
+        java.time.LocalDate aujourdHui = java.time.LocalDate.now();
+        log.info("Date actuelle: {}", aujourdHui);
+
+        java.util.List<com.example.Impression.entities.Reservation> reservations;
+        if (statuts == null || statuts.isEmpty()) {
+            log.info("Utilisation du filtre par défaut (CONFIRMEE, EN_COURS)");
+            reservations = reservationRepository.findReservationsActivesFuturesAnnonce(annonceId, aujourdHui);
+        } else {
+            log.info("Utilisation du filtre personnalisé: {}", statuts);
+            reservations = reservationRepository.findReservationsFuturesAnnonceParStatuts(annonceId, aujourdHui,
+                    statuts);
+        }
+
+        log.info("Nombre de réservations trouvées: {}", reservations.size());
+        for (var r : reservations) {
+            log.debug("Réservation trouvée: {} - {} à {} (statut: {})",
+                    r.getId(), r.getDateArrivee(), r.getDateDepart(), r.getStatut());
+        }
+
+        var result = reservations.stream()
+                .map(r -> new com.example.Impression.dto.PeriodeReserveeDTO(r.getDateArrivee(), r.getDateDepart()))
+                .toList();
+
+        log.info("Nombre de périodes retournées: {}", result.size());
+        return result;
+    }
+
+    /**
+     * 1️⃣8️⃣ Liste des jours futurs réservés (chaque date dans les intervalles)
+     */
+    public java.util.List<java.time.LocalDate> getJoursFutursReserves(java.util.UUID annonceId) {
+        return getJoursFutursReserves(annonceId, null);
+    }
+
+    /**
+     * Liste des jours futurs réservés avec filtre de statuts optionnel
+     */
+    public java.util.List<java.time.LocalDate> getJoursFutursReserves(
+            java.util.UUID annonceId, java.util.List<com.example.Impression.enums.StatutReservation> statuts) {
+        log.info("Récupération des jours futurs réservés pour l'annonce: {} avec statuts: {}", annonceId, statuts);
+        java.time.LocalDate aujourdHui = java.time.LocalDate.now();
+        java.util.List<com.example.Impression.entities.Reservation> reservations;
+
+        if (statuts == null || statuts.isEmpty()) {
+            reservations = reservationRepository.findReservationsActivesFuturesAnnonce(annonceId, aujourdHui);
+        } else {
+            reservations = reservationRepository.findReservationsFuturesAnnonceParStatuts(annonceId, aujourdHui,
+                    statuts);
+        }
+
+        log.info("Nombre de réservations trouvées: {}", reservations.size());
+
+        java.util.Set<java.time.LocalDate> jours = new java.util.TreeSet<>();
+        for (var r : reservations) {
+            log.debug("Traitement réservation: {} - {} à {} (statut: {})",
+                    r.getId(), r.getDateArrivee(), r.getDateDepart(), r.getStatut());
+            java.time.LocalDate d = r.getDateArrivee();
+            while (!d.isAfter(r.getDateDepart().minusDays(1))) { // intervalle [arrivée, départ)
+                if (!d.isBefore(aujourdHui)) {
+                    jours.add(d);
+                }
+                d = d.plusDays(1);
+            }
+        }
+
+        log.info("Nombre de jours réservés trouvés: {}", jours.size());
+        return new java.util.ArrayList<>(jours);
+    }
+
     // Méthodes utilitaires privées
 
     private ReservationDTO convertirEnDTO(Reservation reservation) {

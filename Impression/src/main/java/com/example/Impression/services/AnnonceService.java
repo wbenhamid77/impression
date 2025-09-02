@@ -5,11 +5,13 @@ import com.example.Impression.dto.CreerAnnonceDTO;
 import com.example.Impression.dto.AdresseDTO;
 import com.example.Impression.dto.LocateurInfoDTO;
 import com.example.Impression.dto.StadeDTO;
+import com.example.Impression.dto.CategorieStadeDTO;
 import com.example.Impression.dto.AnnonceStadeDistanceDTO;
 import com.example.Impression.entities.Annonce;
 import com.example.Impression.entities.Adresse;
 import com.example.Impression.entities.Locateur;
 import com.example.Impression.entities.Stade;
+import com.example.Impression.entities.CategorieStade;
 import com.example.Impression.entities.AnnonceStadeDistance;
 import com.example.Impression.enums.TypeMaison;
 import com.example.Impression.exception.AnnonceException;
@@ -20,12 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 @Service
 public class AnnonceService {
@@ -89,10 +89,16 @@ public class AnnonceService {
         // Sauvegarder l'annonce d'abord
         Annonce annonceSauvegardee = annonceRepository.save(annonce);
 
-        // Calculer et sauvegarder les distances avec tous les stades
-        annonceStadeDistanceService.calculerEtSauvegarderDistances(annonceSauvegardee);
+        // Calculer et sauvegarder les distances avec tous les stades (ne pas faire
+        // échouer la création)
+        try {
+            annonceStadeDistanceService.calculerEtSauvegarderDistances(annonceSauvegardee);
+        } catch (Exception ex) {
+            System.err.println("Erreur lors du calcul des distances: " + ex.getMessage());
+        }
 
-        return convertirEnDTO(annonceSauvegardee);
+        // Renvoyer une version sans distances pour la réponse de création
+        return convertirEnDTOSansDistances(annonceSauvegardee);
     }
 
     // Récupérer toutes les annonces actives
@@ -412,21 +418,76 @@ public class AnnonceService {
         dto.setLatitude(annonce.getLatitude());
         dto.setLongitude(annonce.getLongitude());
 
-        // Convertir les distances avec les stades
-        List<AnnonceStadeDistance> distances = annonceStadeDistanceService.getDistancesParAnnonce(annonce);
-        List<AnnonceStadeDistanceDTO> distancesDTO = distances.stream()
-                .map(this::convertirAnnonceStadeDistanceEnDTO)
-                .collect(Collectors.toList());
+        // Convertir les distances avec les stades (robuste aux erreurs)
+        try {
+            List<AnnonceStadeDistance> distances = annonceStadeDistanceService.getDistancesParAnnonce(annonce);
+            List<AnnonceStadeDistanceDTO> distancesDTO = distances.stream()
+                    .map(this::convertirAnnonceStadeDistanceEnDTO)
+                    .collect(Collectors.toList());
+            dto.setDistancesStades(distancesDTO);
 
-        dto.setDistancesStades(distancesDTO);
-
-        // Trouver le stade le plus proche
-        Optional<AnnonceStadeDistance> stadeLePlusProche = annonceStadeDistanceService.getStadeLePlusProche(annonce);
-        if (stadeLePlusProche.isPresent()) {
-            dto.setStadeLePlusProche(convertirAnnonceStadeDistanceEnDTO(stadeLePlusProche.get()));
+            Optional<AnnonceStadeDistance> stadeLePlusProche = annonceStadeDistanceService
+                    .getStadeLePlusProche(annonce);
+            if (stadeLePlusProche.isPresent()) {
+                dto.setStadeLePlusProche(convertirAnnonceStadeDistanceEnDTO(stadeLePlusProche.get()));
+            }
+        } catch (Exception ex) {
+            System.err.println("Erreur lors de la récupération des distances: " + ex.getMessage());
         }
 
         return dto;
+    }
+
+    // Version sans distances, utilisée pour la réponse de création
+    private AnnonceDTO convertirEnDTOSansDistances(Annonce annonce) {
+        AnnonceDTO dto = new AnnonceDTO();
+        dto.setId(annonce.getId());
+        dto.setTitre(annonce.getTitre());
+        dto.setDescription(annonce.getDescription());
+        dto.setAdresse(convertirAdresseEnDTO(annonce.getAdresse()));
+        dto.setPrixParNuit(annonce.getPrixParNuit());
+        dto.setPrixParSemaine(annonce.getPrixParSemaine());
+        dto.setPrixParMois(annonce.getPrixParMois());
+        dto.setCapacite(annonce.getCapacite());
+        dto.setNombreChambres(annonce.getNombreChambres());
+        dto.setNombreSallesDeBain(annonce.getNombreSallesDeBain());
+        dto.setTypeMaison(annonce.getTypeMaison());
+        dto.setEstActive(annonce.isEstActive());
+        dto.setDateCreation(annonce.getDateCreation());
+        dto.setDateModification(annonce.getDateModification());
+        dto.setEquipements(annonce.getEquipements());
+        dto.setRegles(annonce.getRegles());
+        dto.setImages(annonce.getImages());
+        dto.setImagesBlob(annonce.getImagesBlob());
+        dto.setNoteMoyenne(annonce.getNoteMoyenne());
+        dto.setNombreAvis(annonce.getNombreAvis());
+
+        LocateurInfoDTO locateurInfo = new LocateurInfoDTO();
+        locateurInfo.setId(annonce.getLocateur().getId());
+        locateurInfo.setNom(annonce.getLocateur().getNom());
+        locateurInfo.setPrenom(annonce.getLocateur().getPrenom());
+        locateurInfo.setEmail(annonce.getLocateur().getEmail());
+        locateurInfo.setTelephone(annonce.getLocateur().getTelephone());
+        locateurInfo.setPhotoProfil(annonce.getLocateur().getPhotoProfil());
+        locateurInfo.setDescription(annonce.getLocateur().getDescription());
+        locateurInfo.setNoteMoyenne(annonce.getLocateur().getNoteMoyenne());
+        locateurInfo.setNombreAnnonces(annonce.getLocateur().getNombreAnnonces());
+        locateurInfo.setEstVerifie(annonce.getLocateur().isEstVerifie());
+        locateurInfo.setRaisonSociale(annonce.getLocateur().getRaisonSociale());
+        dto.setLocateur(locateurInfo);
+
+        dto.setLatitude(annonce.getLatitude());
+        dto.setLongitude(annonce.getLongitude());
+        // distancesStades et stadeLePlusProche non renseignés ici
+        return dto;
+    }
+
+    // Exposer les distances d'une annonce sous forme de DTOs
+    public List<AnnonceStadeDistanceDTO> getDistancesAnnonce(UUID annonceId) {
+        Annonce annonce = annonceRepository.findById(annonceId)
+                .orElseThrow(() -> new AnnonceException.AnnonceNotFoundException("Annonce non trouvée"));
+        List<AnnonceStadeDistance> distances = annonceStadeDistanceService.getDistancesParAnnonce(annonce);
+        return distances.stream().map(this::convertirAnnonceStadeDistanceEnDTO).collect(Collectors.toList());
     }
 
     private AnnonceStadeDistanceDTO convertirAnnonceStadeDistanceEnDTO(AnnonceStadeDistance distance) {
@@ -481,7 +542,34 @@ public class AnnonceService {
         dto.setEstActif(stade.isEstActif());
         dto.setDateCreation(stade.getDateCreation());
         dto.setDateModification(stade.getDateModification());
+        dto.setSurfaceMetresCarres(stade.getSurfaceMetresCarres());
+        dto.setCategories(stade.getCategories());
+        dto.setCategoriesPlaces(convertirCategories(stade.getCategoriesPlaces()));
+        dto.setPrixMin(stade.getPrixMin());
+        dto.setPrixMax(stade.getPrixMax());
+        dto.setImages(stade.getImages());
+        dto.setImagesBlob(stade.getImagesBlob());
+        dto.setSurfaceType(stade.getSurfaceType());
+        dto.setDimensions(stade.getDimensions());
+        dto.setSiteWeb(stade.getSiteWeb());
+        dto.setTelephone(stade.getTelephone());
 
         return dto;
+    }
+
+    private java.util.List<CategorieStadeDTO> convertirCategories(java.util.List<CategorieStade> categories) {
+        if (categories == null)
+            return java.util.Collections.emptyList();
+        return categories.stream().map(c -> {
+            CategorieStadeDTO dto = new CategorieStadeDTO();
+            dto.setId(c.getId());
+            dto.setCategorie(c.getCategorie());
+            dto.setNom(c.getNom());
+            dto.setNombrePlaces(c.getNombrePlaces());
+            dto.setPrix(c.getPrix());
+            dto.setDateCreation(c.getDateCreation());
+            dto.setDateModification(c.getDateModification());
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
     }
 }

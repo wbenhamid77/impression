@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -23,4 +24,15 @@ public class StadeDTO {
     private boolean estActif;
     private LocalDateTime dateCreation;
     private LocalDateTime dateModification;
+    private Integer surfaceMetresCarres;
+    private List<String> categories;
+    private List<CategorieStadeDTO> categoriesPlaces;
+    private BigDecimal prixMin;
+    private BigDecimal prixMax;
+    private List<String> images;
+    private List<byte[]> imagesBlob;
+    private String surfaceType;
+    private String dimensions;
+    private String siteWeb;
+    private String telephone;
 }

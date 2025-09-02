@@ -59,6 +59,21 @@ public class AnnonceController {
         }
     }
 
+    // GET /api/annonces/{id}/distances - Récupérer distances et stades pour une
+    // annonce
+    @GetMapping("/{id}/distances")
+    public ResponseEntity<List<com.example.Impression.dto.AnnonceStadeDistanceDTO>> getDistancesPourAnnonce(
+            @PathVariable UUID id) {
+        try {
+            List<com.example.Impression.dto.AnnonceStadeDistanceDTO> distances = annonceService.getDistancesAnnonce(id);
+            return ResponseEntity.ok(distances);
+        } catch (AnnonceException.AnnonceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     // PUT /api/annonces/{id} - Mettre à jour une annonce
     @PutMapping("/{id}")
     public ResponseEntity<AnnonceDTO> mettreAJourAnnonce(

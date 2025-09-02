@@ -74,4 +74,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
         // Trouver les réservations d'un locataire pour une annonce spécifique
         List<Reservation> findByLocataireIdAndAnnonceIdOrderByDateCreationDesc(UUID locataireId, UUID annonceId);
+
+        // NEW: Réservations futures (actives) d'une annonce (dateDepart >= aujourd'hui)
+        @Query("SELECT r FROM Reservation r WHERE r.annonce.id = :annonceId " +
+                        "AND r.statut IN ('CONFIRMEE', 'EN_COURS') " +
+                        "AND r.dateDepart >= :dateActuelle " +
+                        "ORDER BY r.dateArrivee ASC")
+        List<Reservation> findReservationsActivesFuturesAnnonce(@Param("annonceId") UUID annonceId,
+                        @Param("dateActuelle") LocalDate dateActuelle);
+
+        // NEW: Réservations futures avec liste de statuts dynamique
+        @Query("SELECT r FROM Reservation r WHERE r.annonce.id = :annonceId " +
+                        "AND r.statut IN :statuts " +
+                        "AND r.dateDepart >= :dateActuelle " +
+                        "ORDER BY r.dateArrivee ASC")
+        List<Reservation> findReservationsFuturesAnnonceParStatuts(@Param("annonceId") UUID annonceId,
+                        @Param("dateActuelle") LocalDate dateActuelle,
+                        @Param("statuts") List<StatutReservation> statuts);
 }

@@ -164,9 +164,13 @@ public class ReservationController {
     public ResponseEntity<List<ReservationDTO>> getReservationsFutures(@PathVariable UUID locataireId) {
         log.info("Demande de récupération des réservations futures pour le locataire: {}", locataireId);
 
-        // Cette méthode pourrait être ajoutée au service si nécessaire
-        List<ReservationDTO> reservations = reservationService.getReservationsLocataire(locataireId);
-        return ResponseEntity.ok(reservations);
+        // Filtrer les réservations futures depuis toutes les réservations du locataire
+        List<ReservationDTO> toutesReservations = reservationService.getReservationsLocataire(locataireId);
+        List<ReservationDTO> reservationsFutures = toutesReservations.stream()
+                .filter(r -> r.getDateArrivee().isAfter(LocalDate.now()))
+                .toList();
+
+        return ResponseEntity.ok(reservationsFutures);
     }
 
     /**
@@ -177,9 +181,13 @@ public class ReservationController {
     public ResponseEntity<List<ReservationDTO>> getReservationsPassees(@PathVariable UUID locataireId) {
         log.info("Demande de récupération des réservations passées pour le locataire: {}", locataireId);
 
-        // Cette méthode pourrait être ajoutée au service si nécessaire
-        List<ReservationDTO> reservations = reservationService.getReservationsLocataire(locataireId);
-        return ResponseEntity.ok(reservations);
+        // Filtrer les réservations passées depuis toutes les réservations du locataire
+        List<ReservationDTO> toutesReservations = reservationService.getReservationsLocataire(locataireId);
+        List<ReservationDTO> reservationsPassees = toutesReservations.stream()
+                .filter(r -> r.getDateDepart().isBefore(LocalDate.now()))
+                .toList();
+
+        return ResponseEntity.ok(reservationsPassees);
     }
 
     /**
@@ -199,7 +207,7 @@ public class ReservationController {
      * Obtenir la liste des périodes déjà réservées (confirmées/en cours)
      */
     @GetMapping("/annonce/{annonceId}/periodes")
-    public ResponseEntity<java.util.List<com.example.Impression.dto.PeriodeReserveeDTO>> getPeriodesReservees(
+    public ResponseEntity<List<com.example.Impression.dto.PeriodeReserveeDTO>> getPeriodesReservees(
             @PathVariable UUID annonceId) {
         log.info("Demande des périodes réservées pour l'annonce: {}", annonceId);
         var periodes = reservationService.getPeriodesReserveesAnnonce(annonceId);
@@ -207,14 +215,96 @@ public class ReservationController {
     }
 
     /**
+     * 1️⃣5️⃣ GET /api/reservations/locataire/{locataireId}/en-cours
+     * Obtenir les réservations en cours d'un locataire
+     */
+    @GetMapping("/locataire/{locataireId}/en-cours")
+    public ResponseEntity<List<ReservationDTO>> getReservationsEnCours(@PathVariable UUID locataireId) {
+        log.info("Demande de récupération des réservations en cours pour le locataire: {}", locataireId);
+
+        List<ReservationDTO> toutesReservations = reservationService.getReservationsLocataire(locataireId);
+        List<ReservationDTO> reservationsEnCours = toutesReservations.stream()
+                .filter(r -> r.getStatut() == StatutReservation.EN_COURS)
+                .toList();
+
+        return ResponseEntity.ok(reservationsEnCours);
+    }
+
+    /**
      * 1️⃣6️⃣ GET /api/reservations/locateur/{locateurId}
      * Obtenir toutes les réservations des annonces d'un locateur
      */
     @GetMapping("/locateur/{locateurId}")
-    public ResponseEntity<java.util.List<com.example.Impression.dto.ReservationDTO>> getReservationsLocateur(
+    public ResponseEntity<List<ReservationDTO>> getReservationsLocateur(
             @PathVariable UUID locateurId) {
         log.info("Demande des réservations pour le locateur: {}", locateurId);
         var reservations = reservationService.getReservationsLocateur(locateurId);
         return ResponseEntity.ok(reservations);
+    }
+
+    /**
+     * 1️⃣7️⃣ GET /api/reservations/annonce/{annonceId}/periodes-futures
+     * Périodes futures réservées (confirmées/en cours par défaut)
+     * Paramètre optionnel: statuts=EN_ATTENTE,CONFIRMEE,EN_COURS
+     */
+    @GetMapping("/annonce/{annonceId}/periodes-futures")
+    public ResponseEntity<List<com.example.Impression.dto.PeriodeReserveeDTO>> getPeriodesFuturesReservees(
+            @PathVariable UUID annonceId,
+            @RequestParam(required = false) String statuts) {
+        List<StatutReservation> filtre = null;
+        if (statuts != null && !statuts.isBlank()) {
+            filtre = java.util.Arrays.stream(statuts.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(StatutReservation::valueOf)
+                    .toList();
+        }
+        var periodes = reservationService.getPeriodesFuturesReserveesAnnonce(annonceId, filtre);
+        return ResponseEntity.ok(periodes);
+    }
+
+    /**
+     * 1️⃣8️⃣ GET /api/reservations/annonce/{annonceId}/jours-reserves
+     * Jours futurs réservés (confirmées/en cours par défaut)
+     * Paramètre optionnel: statuts=EN_ATTENTE,CONFIRMEE,EN_COURS
+     */
+    @GetMapping("/annonce/{annonceId}/jours-reserves")
+    public ResponseEntity<List<LocalDate>> getJoursFutursReserves(
+            @PathVariable UUID annonceId,
+            @RequestParam(required = false) String statuts) {
+        List<StatutReservation> filtre = null;
+        if (statuts != null && !statuts.isBlank()) {
+            filtre = java.util.Arrays.stream(statuts.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(StatutReservation::valueOf)
+                    .toList();
+        }
+        var jours = reservationService.getJoursFutursReserves(annonceId, filtre);
+        return ResponseEntity.ok(jours);
+    }
+
+    /**
+     * 1️⃣9️⃣ PUT /api/reservations/{id}/terminer
+     * Marquer une réservation comme terminée
+     */
+    @PutMapping("/{id}/terminer")
+    public ResponseEntity<ReservationDTO> terminerReservation(@PathVariable UUID id) {
+        log.info("Demande de finalisation de la réservation: {}", id);
+
+        ReservationDTO reservation = reservationService.mettreAJourStatut(id, StatutReservation.TERMINEE);
+        return ResponseEntity.ok(reservation);
+    }
+
+    /**
+     * 2️⃣0️⃣ PUT /api/reservations/{id}/mettre-en-cours
+     * Marquer une réservation comme en cours
+     */
+    @PutMapping("/{id}/mettre-en-cours")
+    public ResponseEntity<ReservationDTO> mettreEnCours(@PathVariable UUID id) {
+        log.info("Demande de mise en cours de la réservation: {}", id);
+
+        ReservationDTO reservation = reservationService.mettreAJourStatut(id, StatutReservation.EN_COURS);
+        return ResponseEntity.ok(reservation);
     }
 }
