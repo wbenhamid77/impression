@@ -31,3 +31,28 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Secrets et configurations sensibles ###
+# Fichiers de configuration Spring contenant des secrets (DB, JWT, API keys)
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+src/main/resources/*.yml
+src/main/resources/*.yaml
+
+# Fichiers d'environnement
+.env
+.env.*
+
+# Keystores / certificats / clés privées
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.crt
+*.cer
+*.key
+
+# Dossiers/ fichiers secrets personnalisés
+secrets/
+config/*.local.*
