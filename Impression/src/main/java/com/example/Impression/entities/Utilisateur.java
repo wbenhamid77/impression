@@ -57,6 +57,9 @@ public abstract class Utilisateur {
     @Column(nullable = false)
     private boolean estActif = true;
 
+    @Column(name = "email_verifie", nullable = false)
+    private boolean emailVerifie = false;
+
     @Column(length = 500)
     private String photoProfil;
 

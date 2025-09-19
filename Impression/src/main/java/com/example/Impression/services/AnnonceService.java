@@ -189,9 +189,15 @@ public class AnnonceService {
     }
 
     // Mettre à jour une annonce
-    public AnnonceDTO mettreAJourAnnonce(UUID id, CreerAnnonceDTO creerAnnonceDTO, UUID locateurId) {
+    public AnnonceDTO mettreAJourAnnonce(UUID id, CreerAnnonceDTO creerAnnonceDTO) {
         Annonce annonce = annonceRepository.findById(id)
                 .orElseThrow(() -> new AnnonceException.AnnonceNotFoundException("Annonce non trouvée"));
+
+        UUID locateurId = creerAnnonceDTO.getLocateurId();
+        if (locateurId == null) {
+            throw new AnnonceException.AnnonceUnauthorizedException(
+                    "ID du locateur manquant pour la modification");
+        }
 
         // Vérifier que l'annonce appartient au locateur
         if (!annonce.getLocateur().getId().equals(locateurId)) {

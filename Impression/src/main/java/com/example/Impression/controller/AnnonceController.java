@@ -78,10 +78,9 @@ public class AnnonceController {
     @PutMapping("/{id}")
     public ResponseEntity<AnnonceDTO> mettreAJourAnnonce(
             @PathVariable UUID id,
-            @RequestBody CreerAnnonceDTO creerAnnonceDTO,
-            @RequestParam UUID locateurId) {
+            @RequestBody CreerAnnonceDTO creerAnnonceDTO) {
         try {
-            AnnonceDTO annonceMiseAJour = annonceService.mettreAJourAnnonce(id, creerAnnonceDTO, locateurId);
+            AnnonceDTO annonceMiseAJour = annonceService.mettreAJourAnnonce(id, creerAnnonceDTO);
             return ResponseEntity.ok(annonceMiseAJour);
         } catch (AnnonceException.AnnonceNotFoundException e) {
             return ResponseEntity.notFound().build();

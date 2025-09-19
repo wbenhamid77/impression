@@ -157,10 +157,11 @@ public class Reservation {
 
     public boolean peutEtreAnnulee() {
         // Logique pour déterminer si la réservation peut être annulée
-        // Par exemple : plus de 24h avant l'arrivée
+        // Permet l'annulation tant que la réservation n'est pas déjà annulée ou terminée
+        // et que la date d'arrivée n'est pas encore passée
         LocalDateTime maintenant = LocalDateTime.now();
         LocalDateTime arrivee = dateArrivee.atStartOfDay();
-        return maintenant.isBefore(arrivee.minusDays(1)) &&
+        return maintenant.isBefore(arrivee) &&
                 statut != StatutReservation.ANNULEE &&
                 statut != StatutReservation.TERMINEE;
     }

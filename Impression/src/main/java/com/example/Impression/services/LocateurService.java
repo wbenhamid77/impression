@@ -44,6 +44,12 @@ public class LocateurService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // EmailService non utilisé directement depuis l'introduction du
+    // VerificationService
+
+    @Autowired
+    private VerificationService verificationService;
+
     // Créer un locateur
     public UtilisateurDTO creerLocateur(CreationLocateurDTO dto) {
         // Vérifier si l'email existe déjà
@@ -70,6 +76,9 @@ public class LocateurService {
 
         // Sauvegarder
         Locateur locateurSauvegarde = locateurRepository.save(locateur);
+
+        // Envoyer email de vérification avec lien (token 24h)
+        verificationService.envoyerEmailVerification(locateurSauvegarde);
 
         return convertirEnDTO(locateurSauvegarde);
     }

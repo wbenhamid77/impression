@@ -51,6 +51,12 @@ public class AuthenticationService {
                     "Compte désactivé");
         }
 
+        // Bloquer si l'email n'est pas vérifié
+        if (!utilisateur.isEmailVerifie()) {
+            return new LoginResponseDTO(null, null, null, null, null, null, null, null,
+                    "Email non vérifié. Veuillez vérifier votre boîte mail.");
+        }
+
         // Mettre à jour la dernière connexion
         utilisateur.setDerniereConnexion(LocalDateTime.now());
         utilisateurRepository.save(utilisateur);

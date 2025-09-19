@@ -47,6 +47,12 @@ public class LocataireService {
     @Autowired
     private AnnonceStadeDistanceService annonceStadeDistanceService;
 
+    // EmailService non utilisé directement depuis l'introduction du
+    // VerificationService
+
+    @Autowired
+    private VerificationService verificationService;
+
     // Créer un locataire
     public UtilisateurDTO creerLocataire(CreationLocataireDTO dto) {
         // Vérifier si l'email existe déjà
@@ -73,6 +79,9 @@ public class LocataireService {
 
         // Sauvegarder
         Locataire locataireSauvegarde = locataireRepository.save(locataire);
+
+        // Envoyer email de vérification avec lien (token 24h)
+        verificationService.envoyerEmailVerification(locataireSauvegarde);
 
         return convertirEnDTO(locataireSauvegarde);
     }

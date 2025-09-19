@@ -195,7 +195,7 @@ Favoris
 - GET `/api/annonces` → `AnnonceDTO[]` (annonces actives)
 - GET `/api/annonces/{id}` → `AnnonceDTO` | 404
 - POST `/api/annonces` → Body `CreerAnnonceDTO` → 201 `AnnonceDTO`
-- PUT `/api/annonces/{id}?locateurId=<UUID>` → Body `CreerAnnonceDTO` → `AnnonceDTO`
+- PUT `/api/annonces/{id}` → Body `CreerAnnonceDTO` → `AnnonceDTO`
 - DELETE `/api/annonces/{id}?locateurId=<UUID>` → 204 | 404
 - PATCH `/api/annonces/{id}/desactiver?locateurId=<UUID>` → 200
 - GET `/api/annonces/locateur/{locateurId}` → `AnnonceDTO[]`

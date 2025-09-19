@@ -91,4 +91,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
         List<Reservation> findReservationsFuturesAnnonceParStatuts(@Param("annonceId") UUID annonceId,
                         @Param("dateActuelle") LocalDate dateActuelle,
                         @Param("statuts") List<StatutReservation> statuts);
+
+        // === MÉTHODES POUR LE SCHEDULER AUTOMATIQUE ===
+
+        // Trouver les réservations en attente dont la date d'arrivée est dépassée
+        List<Reservation> findByStatutAndDateArriveeBefore(StatutReservation statut, LocalDate date);
+
+        // Trouver les réservations confirmées à la date d'arrivée
+        List<Reservation> findByStatutAndDateArrivee(StatutReservation statut, LocalDate date);
+
+        // Trouver les réservations en cours dont la date de départ est dépassée
+        List<Reservation> findByStatutAndDateDepartBefore(StatutReservation statut, LocalDate date);
 }

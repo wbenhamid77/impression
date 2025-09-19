@@ -1,0 +1,39 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Users\21260\AppData\Roaming\npm\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.1.0
+2 info using node@v20.17.0
+3 silly config load:file:C:\Users\21260\AppData\Roaming\npm\node_modules\npm\npmrc
+4 silly config load:file:C:\impression\impression\.npmrc
+5 silly config load:file:C:\Users\21260\.npmrc
+6 silly config load:file:C:\Users\21260\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm install
+8 verbose argv "install"
+9 verbose logfile logs-max:10 dir:C:\impression\impression\clear\_logs\2025-09-06T17_13_34_670Z-
+10 verbose logfile C:\impression\impression\clear\_logs\2025-09-06T17_13_34_670Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly idealTree buildDeps
+14 silly reify moves {}
+15 verbose stack Error: Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\impression\impression\package.json'
+15 verbose stack     at async open (node:internal/fs/promises:639:25)
+15 verbose stack     at async readFile (node:internal/fs/promises:1242:14)
+15 verbose stack     at async read (C:\Users\21260\AppData\Roaming\npm\node_modules\npm\node_modules\@npmcli\package-json\lib\read-package.js:9:18)
+15 verbose stack     at async PackageJson.load (C:\Users\21260\AppData\Roaming\npm\node_modules\npm\node_modules\@npmcli\package-json\lib\index.js:131:31)
+15 verbose stack     at async PackageJson.normalize (C:\Users\21260\AppData\Roaming\npm\node_modules\npm\node_modules\@npmcli\package-json\lib\index.js:117:5)
+15 verbose stack     at async runScript (C:\Users\21260\AppData\Roaming\npm\node_modules\npm\node_modules\@npmcli\run-script\lib\run-script.js:11:28)
+15 verbose stack     at async Install.exec (C:\Users\21260\AppData\Roaming\npm\node_modules\npm\lib\commands\install.js:162:9)
+15 verbose stack     at async Npm.exec (C:\Users\21260\AppData\Roaming\npm\node_modules\npm\lib\npm.js:207:9)
+15 verbose stack     at async module.exports (C:\Users\21260\AppData\Roaming\npm\node_modules\npm\lib\cli\entry.js:67:5)
+16 error code ENOENT
+17 error syscall open
+18 error path C:\impression\impression\package.json
+19 error errno -4058
+20 error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\impression\impression\package.json'
+21 error enoent This is related to npm not being able to find a file.
+21 error enoent
+22 verbose cwd C:\impression\impression
+23 verbose os Windows_NT 10.0.26100
+24 verbose node v20.17.0
+25 verbose npm  v11.1.0
+26 verbose exit -4058
+27 verbose code -4058
+28 error A complete log of this run can be found in: C:\impression\impression\clear\_logs\2025-09-06T17_13_34_670Z-debug-0.log
