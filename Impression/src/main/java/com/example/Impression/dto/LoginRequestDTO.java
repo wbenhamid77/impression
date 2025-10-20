@@ -18,4 +18,8 @@ public class LoginRequestDTO {
 
     @NotBlank(message = "Le mot de passe est obligatoire")
     private String password;
+
+    // Token de vérification optionnel envoyé lors du premier login après
+    // inscription
+    private String verificationToken;
 }

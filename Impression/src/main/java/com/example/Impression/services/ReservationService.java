@@ -3,10 +3,12 @@ package com.example.Impression.services;
 import com.example.Impression.dto.CreationReservationDTO;
 import com.example.Impression.dto.RecapitulatifReservationDTO;
 import com.example.Impression.dto.ReservationDTO;
+import com.example.Impression.dto.CreationPaiementDTO;
 import com.example.Impression.entities.Annonce;
 import com.example.Impression.entities.Locataire;
 import com.example.Impression.entities.Reservation;
 import com.example.Impression.enums.StatutReservation;
+import com.example.Impression.enums.TypePaiement;
 import com.example.Impression.exception.ResourceNotFoundException;
 import com.example.Impression.exception.ReservationException;
 import com.example.Impression.repositories.AnnonceRepository;
@@ -17,9 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +33,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final AnnonceRepository annonceRepository;
     private final LocataireRepository locataireRepository;
+    private final PaiementService paiementService;
 
     /**
      * 1️⃣ Créer un récapitulatif de réservation
@@ -135,6 +136,9 @@ public class ReservationService {
 
         reservation.confirmer();
         reservation = reservationRepository.save(reservation);
+
+        // Créer automatiquement un paiement pour la réservation confirmée
+        creerPaiementAutomatique(reservation);
 
         // TODO: Envoyer une notification au propriétaire
         envoyerNotificationProprietaire(reservation);
@@ -415,6 +419,32 @@ public class ReservationService {
                 adresse.getCodePostal() != null ? adresse.getCodePostal() : "",
                 adresse.getVille() != null ? adresse.getVille() : "",
                 adresse.getPays() != null ? adresse.getPays() : "");
+    }
+
+    /**
+     * Créer automatiquement un paiement pour une réservation confirmée
+     */
+    private void creerPaiementAutomatique(Reservation reservation) {
+        log.info("Création automatique d'un paiement pour la réservation: {}", reservation.getId());
+
+        try {
+            CreationPaiementDTO creationPaiementDTO = new CreationPaiementDTO();
+            creationPaiementDTO.setReservationId(reservation.getId());
+            creationPaiementDTO.setMontant(reservation.getMontantTotal());
+            creationPaiementDTO.setTypePaiement(TypePaiement.TOTAL);
+            creationPaiementDTO.setModePaiement(reservation.getModePaiement());
+            creationPaiementDTO.setDescription("Paiement pour la réservation " + reservation.getId() +
+                    " - " + reservation.getAnnonce().getTitre());
+
+            paiementService.creerPaiement(creationPaiementDTO);
+
+            log.info("Paiement créé automatiquement pour la réservation: {}", reservation.getId());
+        } catch (Exception e) {
+            log.error("Erreur lors de la création automatique du paiement pour la réservation {}: {}",
+                    reservation.getId(), e.getMessage());
+            // Ne pas faire échouer la confirmation de réservation si la création du
+            // paiement échoue
+        }
     }
 
     private void envoyerNotificationProprietaire(Reservation reservation) {

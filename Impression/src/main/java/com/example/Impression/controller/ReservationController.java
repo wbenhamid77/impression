@@ -3,8 +3,10 @@ package com.example.Impression.controller;
 import com.example.Impression.dto.CreationReservationDTO;
 import com.example.Impression.dto.RecapitulatifReservationDTO;
 import com.example.Impression.dto.ReservationDTO;
+import com.example.Impression.dto.PaiementDTO;
 import com.example.Impression.enums.StatutReservation;
 import com.example.Impression.services.ReservationService;
+import com.example.Impression.services.PaiementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ import java.util.UUID;
 public class ReservationController {
 
     private final ReservationService reservationService;
+    private final PaiementService paiementService;
 
     /**
      * 1️⃣ POST /api/reservations/recapitulatif
@@ -306,5 +309,17 @@ public class ReservationController {
 
         ReservationDTO reservation = reservationService.mettreAJourStatut(id, StatutReservation.EN_COURS);
         return ResponseEntity.ok(reservation);
+    }
+
+    /**
+     * 2️⃣1️⃣ GET /api/reservations/{id}/paiements
+     * Obtenir les paiements d'une réservation
+     */
+    @GetMapping("/{id}/paiements")
+    public ResponseEntity<List<PaiementDTO>> getPaiementsReservation(@PathVariable UUID id) {
+        log.info("Demande de récupération des paiements pour la réservation: {}", id);
+
+        List<PaiementDTO> paiements = paiementService.getPaiementsReservation(id);
+        return ResponseEntity.ok(paiements);
     }
 }

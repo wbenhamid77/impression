@@ -27,6 +27,9 @@ public class AuthenticationService {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
+    private VerificationService verificationService;
+
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
         // Vérifier si l'utilisateur existe
         Optional<Utilisateur> utilisateurOpt = utilisateurRepository
@@ -51,10 +54,35 @@ public class AuthenticationService {
                     "Compte désactivé");
         }
 
-        // Bloquer si l'email n'est pas vérifié
+        // Si l'email n'est pas encore vérifié, accepter un token de vérification
+        // optionnel
         if (!utilisateur.isEmailVerifie()) {
-            return new LoginResponseDTO(null, null, null, null, null, null, null, null,
-                    "Email non vérifié. Veuillez vérifier votre boîte mail.");
+            String verificationToken = loginRequest.getVerificationToken();
+            if (verificationToken != null) {
+                verificationToken = verificationToken.trim().toLowerCase();
+            }
+            if (verificationToken == null || verificationToken.isBlank()) {
+                return new LoginResponseDTO(null, null, null, null, null, null, null, null,
+                        "Email non vérifié. Fournissez le token de vérification envoyé par email.");
+            }
+
+            // Valider le token (le service marque le compte comme vérifié et le token comme
+            // utilisé)
+            Optional<Utilisateur> utilisateurTokenOpt = verificationService.validerToken(verificationToken);
+            if (utilisateurTokenOpt.isEmpty()) {
+                return new LoginResponseDTO(null, null, null, null, null, null, null, null,
+                        "Token de vérification invalide ou expiré");
+            }
+
+            // Par sécurité, vérifier que le token correspond bien à l'utilisateur qui tente
+            // de se connecter
+            if (!utilisateurTokenOpt.get().getId().equals(utilisateur.getId())) {
+                return new LoginResponseDTO(null, null, null, null, null, null, null, null,
+                        "Token de vérification ne correspond pas à cet utilisateur");
+            }
+
+            // Recharger l'utilisateur pour refléter l'état vérifié
+            utilisateur = utilisateurTokenOpt.get();
         }
 
         // Mettre à jour la dernière connexion

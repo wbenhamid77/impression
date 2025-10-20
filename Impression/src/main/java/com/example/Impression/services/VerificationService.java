@@ -58,6 +58,9 @@ public class VerificationService {
     }
 
     public Optional<Utilisateur> validerToken(String token) {
+        if (token != null) {
+            token = token.trim().toLowerCase();
+        }
         Optional<VerificationToken> tokenOpt = verificationTokenRepository.findByToken(token);
         if (tokenOpt.isEmpty())
             return Optional.empty();

@@ -21,7 +21,8 @@ Deux contrôleurs exposent des routes d’authentification. Utilisez celui qui c
 ```json
 {
   "email": "john@doe.com",
-  "password": "secret123"
+  "password": "secret123",
+  "verificationToken": "<OPTIONNEL: token reçu par email>"
 }
 ```
   - 200: `LoginResponseDTO`
@@ -38,7 +39,7 @@ Deux contrôleurs exposent des routes d’authentification. Utilisez celui qui c
   "message": "Authentification réussie"
 }
 ```
-  - 400: `LoginResponseDTO` avec `message`
+  - 400: `LoginResponseDTO` avec `message` (ex: "Email non vérifié. Fournissez le token de vérification envoyé par email.")
 
 - POST `/api/auth/refresh?refreshToken=<token>`
   - 200: `{ "token": "<NEW_JWT>" }`
