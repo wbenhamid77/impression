@@ -4,6 +4,7 @@ import com.example.Impression.dto.ConfirmationPaiementDTO;
 import com.example.Impression.dto.CreationPaiementDTO;
 import com.example.Impression.dto.PaiementDTO;
 import com.example.Impression.dto.RemboursementPaiementDTO;
+import com.example.Impression.dto.PaiementStatsDTO;
 import com.example.Impression.services.PaiementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,18 @@ public class PaiementController {
 
         PaiementDTO paiement = paiementService.creerPaiement(creationDTO);
         return ResponseEntity.ok(paiement);
+    }
+
+    /**
+     * Statistiques de paiements (par utilisateur)
+     * GET /api/paiements/stats?userId=...&userType=locataire|locateur
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<PaiementStatsDTO> getStats(@RequestParam("userId") UUID userId,
+            @RequestParam("userType") String userType) {
+        log.info("Demande de stats paiements: userId={}, userType={}", userId, userType);
+        PaiementStatsDTO stats = paiementService.getPaiementStats(userId, userType);
+        return ResponseEntity.ok(stats);
     }
 
     /**

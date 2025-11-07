@@ -84,6 +84,23 @@ public class Paiement {
     @Column(columnDefinition = "TEXT")
     private String metadonnees;
 
+    // RIBs utilisés pour les virements liés à ce paiement
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payin_from_rib_id")
+    private Rib payinFromRib; // ex: RIB du locataire (payin)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payin_to_rib_id")
+    private Rib payinToRib; // ex: RIB de la plateforme (payin)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payout_from_rib_id")
+    private Rib payoutFromRib; // ex: RIB de la plateforme (payout)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payout_to_rib_id")
+    private Rib payoutToRib; // ex: RIB du locateur (payout)
+
     // Constructeur principal
     public Paiement(Reservation reservation, BigDecimal montant, TypePaiement typePaiement,
             ModePaiement modePaiement, String description) {
